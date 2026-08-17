@@ -27,5 +27,9 @@ namespace ToDoApp1.Controllers
             return Ok(response);
         }
 
+        //PasswordCheckerResponseDto IPasswordChecker.CheckPassword(PasswordCheckerRequestDto request)
+        //{
+        //    throw new NotImplementedException();
+        //}
     }
 }
