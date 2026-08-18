@@ -5,13 +5,13 @@ namespace ToDoApp1.Business.Interfaces
     public interface IToDoService
     {
         
-        List<ToDoDto> GetAll();
+        List<ToDoResponseDto> GetAll();
 
-        ToDoDto? GetById(int id);
+        ToDoResponseDto? GetById(int id);
 
-        void PutAdd(ToDoDto todo);
+        void PostAdd(ToDoCreateDto todo);
 
-        void Update(ToDoDto todo);
+        void Update(int id,ToDoUpdateDto todo);
 
         void Delete(int id);
     }

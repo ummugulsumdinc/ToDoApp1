@@ -41,19 +41,18 @@ namespace ToDoApp1.Controllers
         }
 
         [HttpPost("hello")] // yeni veri oluşturmak eklemek için
-        public IActionResult HelloPost([FromBody] ToDoDto newItem)
+        public IActionResult HelloPost([FromBody] ToDoCreateDto newItem)
         {
            
-            _toDoService.PutAdd(newItem);
+            _toDoService.PostAdd(newItem);
 
             return Ok("Kayıt başarıyla eklendi.");
         }
 
         [HttpPut("hello/{id}")] // verinin tamamını günceller
-        public IActionResult HelloPut(int id, [FromBody] ToDoDto updatedItem)
+        public IActionResult HelloPut(int id, [FromBody] ToDoUpdateDto updatedItem)
         {
-            updatedItem.Id = id;
-            _toDoService.Update(updatedItem);
+            _toDoService.Update(id,updatedItem);
 
             return Ok("Kayıt başarıyla güncellendi.");
         }
