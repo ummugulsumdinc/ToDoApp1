@@ -1,27 +1,32 @@
 using ToDoApp1.Business.Interfaces;
 using ToDoApp1.Business.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen(); // Swagger Jeneratörü
+
 builder.Services.AddScoped<ICalculator, CalculateService>();
+builder.Services.AddSingleton<IToDoService, ToDoService>();
+
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();   // Swagger JSON dosyasýný oluþturur
+    app.UseSwaggerUI(); // Swagger UI arayüzünü sunar
 }
+
 var env = app.Environment.EnvironmentName;
 
 app.UseRouting();
 app.UseHttpsRedirection();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
