@@ -3,24 +3,25 @@ using ToDoApp1.Business.Services;
 using FluentValidation;
 using ToDoApp1.Validators;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen(); // Swagger Jeneratörü
+builder.Services.AddSwaggerGen(); // Swagger Jenerat�r�
 
 builder.Services.AddScoped<ICalculator, CalculateService>();
-builder.Services.AddScoped<IPasswordChecker, PasswordCheckerService>();
-builder.Services.AddValidatorsFromAssemblyContaining<PasswordCheckerValidator>();
+builder.Services.AddSingleton<IToDoService, ToDoService>();
+
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwagger();   // Swagger JSON dosyasını oluşturur
-    app.UseSwaggerUI(); // Swagger UI arayüzünü sunar
+    app.UseSwagger();   // Swagger JSON dosyas�n� olu�turur
+    app.UseSwaggerUI(); // Swagger UI aray�z�n� sunar
 }
 
 var env = app.Environment.EnvironmentName;

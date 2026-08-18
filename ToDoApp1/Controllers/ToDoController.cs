@@ -1,108 +1,69 @@
-﻿using Microsoft.AspNetCore.Mvc;//paket dahil ettik
+﻿using Microsoft.AspNetCore.Mvc; // paket dahil ettik
+using ToDoApp1.Business.Dtos;
+using ToDoApp1.Business.Interfaces; // Arayüzü kullanmak için dahil ettik
 
 namespace ToDoApp1.Controllers
 {
-
-    public class ToDoItem{
-        public int Id { get; set; }
-        public string? Title { get; set; }
-        public bool IsCompleted { get; set; }
-    }
     [Route("api/[controller]")]
     [ApiController]
     public class ToDoController : ControllerBase
     {
+        // Dependency Injection: Asıl işi yapacak servisi içeri alıyoruz.
+        private readonly IToDoService _toDoService;
 
-        private static List<ToDoItem> _todo = new List<ToDoItem>
+        public ToDoController(IToDoService toDoService)
         {
-            new ToDoItem{Id=1, Title=".NET öğren ", IsCompleted=true},
-            new ToDoItem{Id=2, Title="HTTP çalış", IsCompleted=false}
-        };
-        [HttpGet("hello")]//veriyi okur - listeyi yazdırır
-        public List<ToDoItem> HelloGet()
-        {
-            return _todo;
+            _toDoService = toDoService;
         }
 
-        [HttpPost("hello")]//yeni veri oluşturmak eklemek için
-        public ToDoItem HelloPost([FromBody] ToDoItem newItem)
+        [HttpGet("hello")] // veriyi okur - listeyi yazdırır
+        public IActionResult HelloGet()
         {
-            _todo.Add(newItem);
-            return newItem;
-        }
-
-        [HttpPut("hello/{id}")]//verinin tamamını günceller
-        public ToDoItem HelloPut(int id, [FromBody] ToDoItem updatedItem)
-        {
-            ToDoItem? item = null;
-            foreach(var wanted_item in _todo)
-            {
-                if (wanted_item.Id == id)
-                {
-                    item = wanted_item;
-                    break;
-                }
-            }
-            if (item != null)
-            {
-                item.Title = updatedItem.Title;
-                item.IsCompleted = updatedItem.IsCompleted;
-            }
-
-            return item;
-        }
-
-        [HttpPatch("hello/{id}")]//verinin bir kısmını günceller
-        public ToDoItem? HelloPatch(int id, [FromBody] ToDoItem updatedItem)
-        {
-            ToDoItem? item = null;
-
-            foreach (var wanted_item in _todo)
-            {
-                if (wanted_item.Id == id)
-                {
-                    item = wanted_item;
-                    break;
-                }
-            }
-
-            if (item != null && updatedItem.Title != null)
-            {
-                item.Title = updatedItem.Title;
-            }
-            if (item != null && updatedItem.IsCompleted != item.IsCompleted)
-            {
-                item.IsCompleted = updatedItem.IsCompleted;
-            }
-
-
-            return item;
-        }
-
-        [HttpDelete("hello/{id}")]// var olan veriyi siler
-        public List<ToDoItem> HelloDelete(int id)
-        {
-            ToDoItem? item = null;
-
-            foreach (var wanted_item in _todo)
-            {
-               
-                if (wanted_item.Id == id)
-                {
-                    item=wanted_item; 
-                    break;   
-                }
-            }
-
             
-            if (item != null)
-            {
-                _todo.Remove(item);
-            }
+            var list = _toDoService.GetAll();
 
-            return _todo;
-          
+            // Sonucu 200 OK durum kodu ile dön
+            return Ok(list);
         }
 
+        [HttpGet("hello/{id}")] // Sadece belirli bir ID'yi okur
+        public IActionResult HelloGetById(int id)
+        {
+            var item = _toDoService.GetById(id);
+
+            if (item == null)
+            {
+                return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı."); // 404 Not Found 
+            }
+
+            // Kayıt bulunduysa 200 OK 
+            return Ok(item);
+        }
+
+        [HttpPost("hello")] // yeni veri oluşturmak eklemek için
+        public IActionResult HelloPost([FromBody] ToDoCreateDto newItem)
+        {
+           
+            _toDoService.PostAdd(newItem);
+
+            return Ok("Kayıt başarıyla eklendi.");
+        }
+
+        [HttpPut("hello/{id}")] // verinin tamamını günceller
+        public IActionResult HelloPut(int id, [FromBody] ToDoUpdateDto updatedItem)
+        {
+            _toDoService.Update(id,updatedItem);
+
+            return Ok("Kayıt başarıyla güncellendi.");
+        }
+
+        [HttpDelete("hello/{id}")] // var olan veriyi siler
+        public IActionResult HelloDelete(int id)
+        {
+            
+            _toDoService.Delete(id);
+
+            return Ok("Kayıt başarıyla silindi.");
+        }
     }
-    }
+}
