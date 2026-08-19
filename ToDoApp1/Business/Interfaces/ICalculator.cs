@@ -4,6 +4,6 @@ namespace ToDoApp1.Business.Interfaces
 {
     public interface ICalculator
     {
-        double Hesapla(CalculateDto calculation);
+        double Hesapla(CalculateDto calculation);// dönüş tipi metrod adı (parametre)
     }
 }

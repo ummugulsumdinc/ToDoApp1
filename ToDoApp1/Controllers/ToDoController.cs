@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc; // paket dahil ettik
 using ToDoApp1.Business.Dtos;
 using ToDoApp1.Business.Interfaces; // Arayüzü kullanmak için dahil ettik
+using FluentValidation;
 
 namespace ToDoApp1.Controllers
 {
@@ -11,9 +12,16 @@ namespace ToDoApp1.Controllers
         // Dependency Injection: Asıl işi yapacak servisi içeri alıyoruz.
         private readonly IToDoService _toDoService;
 
-        public ToDoController(IToDoService toDoService)
+        private readonly IValidator<ToDoCreateDto> _createValidator;
+        private readonly IValidator<ToDoUpdateDto> _updateValidator;
+
+        public ToDoController(IToDoService toDoService,
+            IValidator<ToDoCreateDto> createValidator,
+            IValidator<ToDoUpdateDto> updateValidator)
         {
             _toDoService = toDoService;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
 
         [HttpGet("hello")] // veriyi okur - listeyi yazdırır
@@ -41,19 +49,33 @@ namespace ToDoApp1.Controllers
         }
 
         [HttpPost("hello")] // yeni veri oluşturmak eklemek için
-        public IActionResult HelloPost([FromBody] ToDoDto newItem)
+        public IActionResult HelloPost([FromBody] ToDoCreateDto newItem)
         {
-           
-            _toDoService.PutAdd(newItem);
+            // 4. Servise gitmeden önce gelen veriyi kurallarımızdan geçiriyoruz
+            var validationResult = _createValidator.Validate(newItem);
+
+            // 5. Eğer kurallara uymayan bir durum varsa 400 Bad Request dönüyoruz
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors);
+            }
+            _toDoService.PostAdd(newItem);
 
             return Ok("Kayıt başarıyla eklendi.");
         }
 
         [HttpPut("hello/{id}")] // verinin tamamını günceller
-        public IActionResult HelloPut(int id, [FromBody] ToDoDto updatedItem)
+        public IActionResult HelloPut(int id, [FromBody] ToDoUpdateDto updatedItem)
         {
-            updatedItem.Id = id;
-            _toDoService.Update(updatedItem);
+            // 6. Güncelleme işlemi için de Update Validator'ı çalıştırıyoruz
+            var validationResult = _updateValidator.Validate(updatedItem);
+
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors);
+            }
+
+            _toDoService.Update(id,updatedItem);
 
             return Ok("Kayıt başarıyla güncellendi.");
         }

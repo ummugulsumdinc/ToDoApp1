@@ -1,5 +1,7 @@
 using ToDoApp1.Business.Interfaces;
 using ToDoApp1.Business.Services;
+using FluentValidation;
+using ToDoApp1.Validators;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,10 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen(); // Swagger Jeneratörü
+builder.Services.AddSwaggerGen(); // Swagger Jeneratï¿½rï¿½
 
 builder.Services.AddScoped<ICalculator, CalculateService>();
 builder.Services.AddSingleton<IToDoService, ToDoService>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateToDoValidator>();
 
 
 var app = builder.Build();
@@ -18,8 +21,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwagger();   // Swagger JSON dosyasýný oluþturur
-    app.UseSwaggerUI(); // Swagger UI arayüzünü sunar
+    app.UseSwagger();   
+    app.UseSwaggerUI(); 
 }
 
 var env = app.Environment.EnvironmentName;
