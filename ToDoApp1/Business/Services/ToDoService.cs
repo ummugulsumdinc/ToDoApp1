@@ -2,6 +2,7 @@
 using ToDoApp1.Business.Dtos;
 using ToDoApp1.Business.Interfaces;
 using ToDoApp1.Models;
+using FluentValidation;
 
 namespace ToDoApp1.Business.Services
 {
@@ -23,9 +24,12 @@ namespace ToDoApp1.Business.Services
                 {
                     Id = item.Id,
                     Title = item.Title,
+                    Description = item.Description,
                     IsCompleted = item.IsCompleted,
-                    CreatedDate = item.CreatedDate?.ToString("dd.MM.yyyy HH:mm"),
-                    UpdatedDate = item.UpdatedDate?.ToString("dd.MM.yyyy HH:mm")
+                    CreatedDate = item.CreatedDate?.ToString("dd/MM/yyyy HH:mm"),
+                    UpdatedDate = item.UpdatedDate?.ToString("dd/MM/yyyy HH:mm"),
+                    DueDate = item.DueDate?.ToString("dd/MM/yyyy HH:mm"),
+                    Priority = item.Priority
                 });
             }
             return responseList; // response DTO listesini döndür
@@ -41,9 +45,12 @@ namespace ToDoApp1.Business.Services
                     {
                         Id = item.Id,
                         Title = item.Title,
+                        Description= item.Description, 
                         IsCompleted = item.IsCompleted,
-                        CreatedDate = item.CreatedDate?.ToString("dd.MM.yyyy HH:mm"),
-                        UpdatedDate= item.UpdatedDate?.ToString("dd.MM.yyyy HH:mm"),
+                        CreatedDate = item.CreatedDate?.ToString("dd/MM/yyyy HH:mm"),
+                        UpdatedDate= item.UpdatedDate?.ToString("dd/MM/yyyy HH:mm"),
+                        DueDate = item.DueDate?.ToString("dd/MM/yyyy HH:mm"),
+                        Priority = item.Priority
                     };
                 }
             }
@@ -56,8 +63,11 @@ namespace ToDoApp1.Business.Services
             {
                 Id = _nextid,
                 Title = todo.Title, // Kullanıcının gönderdiği başlığı aldık
+                Description= todo.Description,
                 IsCompleted = false, // Yeni kayıt varsayılan olarak tamamlanmamıştır
-                CreatedDate = DateTime.Now
+                CreatedDate = DateTime.Now,
+                DueDate = todo.DueDate,
+                Priority = todo.Priority
             };
 
             _nextid++;
@@ -80,8 +90,11 @@ namespace ToDoApp1.Business.Services
             if(targetitem != null)
             {
                targetitem.Title= todo.Title;
+               targetitem.Description= todo.Description;
                targetitem.IsCompleted= todo.IsCompleted;
                targetitem.UpdatedDate = DateTime.Now;
+               targetitem.DueDate = todo.DueDate;
+               targetitem.Priority= todo.Priority;
             }
         }
         public void Delete(int id)

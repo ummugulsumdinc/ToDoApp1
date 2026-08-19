@@ -13,6 +13,7 @@ builder.Services.AddSwaggerGen(); // Swagger Jenerat�r�
 
 builder.Services.AddScoped<ICalculator, CalculateService>();
 builder.Services.AddSingleton<IToDoService, ToDoService>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateToDoValidator>();
 
 
 var app = builder.Build();
@@ -20,8 +21,8 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwagger();   // Swagger JSON dosyas�n� olu�turur
-    app.UseSwaggerUI(); // Swagger UI aray�z�n� sunar
+    app.UseSwagger();   
+    app.UseSwaggerUI(); 
 }
 
 var env = app.Environment.EnvironmentName;
