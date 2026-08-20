@@ -9,9 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen(); // Swagger Jenerat�r�
+builder.Services.AddSwaggerGen(); // Swagger Jeneratör
 
-builder.Services.AddScoped<ICalculator, CalculateService>();
 builder.Services.AddSingleton<IToDoService, ToDoService>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateToDoValidator>();
 

@@ -2,10 +2,11 @@
 using ToDoApp1.Business.Dtos;
 using ToDoApp1.Business.Interfaces; // Arayüzü kullanmak için dahil ettik
 using FluentValidation;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace ToDoApp1.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/todos")]
     [ApiController]
     public class ToDoController : ControllerBase
     {
@@ -24,18 +25,17 @@ namespace ToDoApp1.Controllers
             _updateValidator = updateValidator;
         }
 
-        [HttpGet("hello")] // veriyi okur - listeyi yazdırır
-        public IActionResult HelloGet()
+        [HttpGet] 
+        public IActionResult GetAll([FromQuery] bool? isCompleted, [FromQuery] string?  sortBy)
         {
             
-            var list = _toDoService.GetAll();
+            var list = _toDoService.GetAll(isCompleted, sortBy);
 
-            // Sonucu 200 OK durum kodu ile dön
             return Ok(list);
         }
 
-        [HttpGet("hello/{id}")] // Sadece belirli bir ID'yi okur
-        public IActionResult HelloGetById(int id)
+        [HttpGet("{id}")] 
+        public IActionResult GetById(int id)
         {
             var item = _toDoService.GetById(id);
 
@@ -48,26 +48,42 @@ namespace ToDoApp1.Controllers
             return Ok(item);
         }
 
-        [HttpPost("hello")] // yeni veri oluşturmak eklemek için
-        public IActionResult HelloPost([FromBody] ToDoCreateDto newItem)
+        [HttpGet("search")]
+        public IActionResult Search([FromQuery] string query)
         {
-            // 4. Servise gitmeden önce gelen veriyi kurallarımızdan geçiriyoruz
+            if (string.IsNullOrWhiteSpace(query))// null ya da sadece space girildiyse
+            {
+                return BadRequest("Arama yapabilmek için bir kelime girmelisiniz.");
+            }
+
+            var result = _toDoService.Search(query);
+            return Ok(result);
+        }
+
+        [HttpPost] // yeni veri oluşturmak eklemek için
+        public IActionResult Post([FromBody] ToDoCreateDto newItem)
+        {
             var validationResult = _createValidator.Validate(newItem);
 
-            // 5. Eğer kurallara uymayan bir durum varsa 400 Bad Request dönüyoruz
+           
             if (!validationResult.IsValid)
             {
                 return BadRequest(validationResult.Errors);
             }
             _toDoService.PostAdd(newItem);
 
-            return Ok("Kayıt başarıyla eklendi.");
+            return Created(string.Empty, "Kayıt başarıyla eklendi.");
         }
 
-        [HttpPut("hello/{id}")] // verinin tamamını günceller
-        public IActionResult HelloPut(int id, [FromBody] ToDoUpdateDto updatedItem)
+        [HttpPut("{id}")] 
+        public IActionResult Put(int id, [FromBody] ToDoUpdateDto updatedItem)
         {
-            // 6. Güncelleme işlemi için de Update Validator'ı çalıştırıyoruz
+            var item = _toDoService.GetById(id);
+
+            if (item == null)
+            {
+                return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı."); // 404 Not Found 
+            }
             var validationResult = _updateValidator.Validate(updatedItem);
 
             if (!validationResult.IsValid)
@@ -80,13 +96,30 @@ namespace ToDoApp1.Controllers
             return Ok("Kayıt başarıyla güncellendi.");
         }
 
-        [HttpDelete("hello/{id}")] // var olan veriyi siler
-        public IActionResult HelloDelete(int id)
+        [HttpDelete("{id}")] // var olan veriyi siler
+        public IActionResult Delete(int id)
         {
-            
+            var item = _toDoService.GetById(id);
+
+            if (item == null)
+            {
+                return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı."); // 404 Not Found 
+            }
             _toDoService.Delete(id);
 
             return Ok("Kayıt başarıyla silindi.");
+        }
+
+        [HttpPatch("{id}/complete")]
+        public IActionResult CompleteToDo(int id)
+        {
+            var existingItem=_toDoService.GetById(id);// bu id ile bir kayıt var mı 
+            if(existingItem == null)
+            {
+                return NotFound("İstenen kayıt bulunamadı");
+            }
+            _toDoService.MarkAsComplete(id);
+            return Ok("Kayıt başarıyla tamamlandı olarak işaretlendi");
         }
     }
 }
