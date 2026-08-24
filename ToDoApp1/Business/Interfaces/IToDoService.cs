@@ -5,7 +5,7 @@ namespace ToDoApp1.Business.Interfaces
     public interface IToDoService
     {
         
-        List<ToDoResponseDto> GetAll();
+        List<ToDoResponseDto> GetAll(bool? isCompleted=null, string? sortBy = null);
 
         ToDoResponseDto? GetById(int id);
 
@@ -14,5 +14,8 @@ namespace ToDoApp1.Business.Interfaces
         void Update(int id,ToDoUpdateDto todo);
 
         void Delete(int id);
+
+        void MarkAsComplete(int id);
+        List<ToDoResponseDto> Search(string query);
     }
 }

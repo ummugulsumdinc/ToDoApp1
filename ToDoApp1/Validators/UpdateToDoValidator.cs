@@ -19,6 +19,11 @@ namespace ToDoApp1.Validators
             RuleFor(x => x.Priority)
                 .InclusiveBetween(1, 3)
                 .WithMessage("Öncelik değeri sadece 1 (Düşük), 2 (Orta) veya 3 (Yüksek) olabilir.");
+           
+            RuleFor(x => x.DueDate)
+                 .GreaterThanOrEqualTo(DateTime.Today)
+                 .WithMessage("Bitiş tarihi geçmiş bir tarih olamaz.")
+                 .When(x => x.DueDate.HasValue);
         }
     }
 }
