@@ -1,12 +1,11 @@
-﻿namespace ToDoApp1.Business.Dtos
+﻿namespace ToDoApp1.Business.Dtos.ToDo
 {
     public class ToDoResponseDto
     {
         public int Id { get; set; }
         public string? Title { get; set; }
         public string? Description { get; set; }
-        public bool IsCompleted { get; set; }
-
+        public int? StatusId { get; set; }
         public string? CreatedDate { get; set; }
         public string? UpdatedDate { get; set; }
         public string? DueDate { get; set; }

@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using ToDoApp1.Business.Dtos;
+using ToDoApp1.Business.Dtos.ToDo;
 
 namespace ToDoApp1.Validators
 {

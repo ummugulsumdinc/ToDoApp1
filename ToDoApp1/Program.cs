@@ -1,7 +1,9 @@
+using FluentValidation; 
 using ToDoApp1.Business.Interfaces;
 using ToDoApp1.Business.Services;
-using FluentValidation;
+using ToDoApp1.Data;
 using ToDoApp1.Validators;
+using Microsoft.EntityFrameworkCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,10 +13,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen(); // Swagger Jeneratör
 
-builder.Services.AddSingleton<IToDoService, ToDoService>();
+builder.Services.AddScoped<IToDoService, ToDoService>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateToDoValidator>();
-
-
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IStatusService, StatusService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
