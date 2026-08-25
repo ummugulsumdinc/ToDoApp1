@@ -1,21 +1,15 @@
-﻿using ToDoApp1.Business.Dtos;
+﻿using ToDoApp1.Business.Dtos.ToDo;
 
 namespace ToDoApp1.Business.Interfaces
 {
     public interface IToDoService
     {
-        
-        List<ToDoResponseDto> GetAll(bool? isCompleted=null, string? sortBy = null);
-
-        ToDoResponseDto? GetById(int id);
-
-        void PostAdd(ToDoCreateDto todo);
-
-        void Update(int id,ToDoUpdateDto todo);
-
-        void Delete(int id);
-
-        void MarkAsComplete(int id);
-        List<ToDoResponseDto> Search(string query);
+        Task<List<ToDoResponseDto>> GetAll(int? statusId = null, string? sortBy = null);
+        Task<ToDoResponseDto?> GetById(int id);
+        Task<ToDoResponseDto> PostAdd(ToDoCreateDto todo);
+        Task Update(int id, ToDoUpdateDto todo);
+        Task Delete(int id);
+        Task MarkAsComplete(int id);
+        Task<List<ToDoResponseDto>> Search(string query);
     }
 }

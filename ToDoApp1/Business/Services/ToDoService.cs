@@ -1,161 +1,167 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using ToDoApp1.Business.Dtos;
+﻿using Microsoft.EntityFrameworkCore;
 using ToDoApp1.Business.Interfaces;
 using ToDoApp1.Models;
 using FluentValidation;
-using System.Reflection.Metadata;
+using ToDoApp1.Data;
+using ToDoApp1.Business.Dtos.ToDo;
 
 namespace ToDoApp1.Business.Services
 {
    
     public class ToDoService: IToDoService
     {
-        private readonly List<ToDo> _todoList;
-        private int _nextid = 1;
-        public ToDoService()//constructor
+        private readonly AppDbContext _context;//databaseden alıyoruz artık
+        public ToDoService(AppDbContext context)
         {
-            _todoList= new List<ToDo>();
+            _context = context;
         }
-        public List<ToDoResponseDto> GetAll(bool? isCompleted = null, string? sortBy = null)
+        
+        
+        public async Task<List<ToDoResponseDto>> GetAll(int? statusId=null, string? sortBy = null)
         {
-            var filteredList = _todoList.AsEnumerable();
+            var query = _context.ToDos.AsQueryable();
 
-            if (isCompleted.HasValue)
+            if (statusId.HasValue)
             {
-                // Burada .ToList() dememize gerek yok,  sorgu aşamasındayız
-                filteredList = filteredList.Where(x => x.IsCompleted == isCompleted.Value);
+                // Veritabanında StatusId'ye göre arama yapıyoruz
+                query = query.Where(x => x.StatusId == statusId.Value);
             }
 
-            if(!string.IsNullOrWhiteSpace(sortBy))
+            if (!string.IsNullOrWhiteSpace(sortBy))
             {
                 var sortTerm = sortBy.ToLower();
                 if (sortTerm == "title")
                 {
-                    filteredList = filteredList.OrderBy(x => x.Title);// ascending order depending on title
-                }else if(sortTerm == "createdate")
+                    query = query.OrderBy(x => x.Title);
+                }
+                else if (sortTerm == "createdate")
                 {
-                    filteredList = filteredList.OrderBy(x => x.CreatedDate);
+                    query = query.OrderBy(x => x.CreatedDate);
                 }
                 else if (sortTerm == "duedate")
                 {
-                    filteredList = filteredList.OrderBy(x => x.DueDate);
+                    query = query.OrderBy(x => x.DueDate);
                 }
             }
 
+            // Sorguyu veritabanında çalıştır ve sonuçları listeye çevir (Asenkron)
+            var list = await query.ToListAsync();
+
             var responseList = new List<ToDoResponseDto>();
-            foreach (var item in filteredList) {
+            foreach (var item in list) {
 
                 responseList.Add(MapToDto(item));
             }
             return responseList;
         }
 
-        public ToDoResponseDto? GetById(int id)
+        public async Task<ToDoResponseDto?> GetById(int id)
         {
-            foreach(var item in _todoList)
+            // FirstOrDefaultAsync veya FindAsync ile veritabanından tek kayıt çekiyoruz
+            var item = await _context.ToDos.FindAsync(id);
+
+            if (item != null)
             {
-                if (item.Id == id)
-                {
-                    return MapToDto(item);
-                }
+                return MapToDto(item);
             }
             return null;
         }
 
-        public void PostAdd(ToDoCreateDto todo)
+        public async Task<ToDoResponseDto> PostAdd(ToDoCreateDto todo)
         {
             var newTodo = new ToDo // DTO'daki bilgileri kullanarak asıl Modeli (ToDo) oluşturuyoruz
             {
-                Id = _nextid,
+                
                 Title = todo.Title, // Kullanıcının gönderdiği başlığı aldık
                 Description= todo.Description,
-                IsCompleted = false, // Yeni kayıt varsayılan olarak tamamlanmamıştır
                 CreatedDate = DateTime.Now,
                 DueDate = todo.DueDate,
-                Priority = todo.Priority
+                Priority = todo.Priority,
+                ProjectId=todo.ProjectId,
+                StatusId=todo.StatusId.Value
             };
 
-            _nextid++;
-            _todoList.Add(newTodo); //TODO MODEL LİSTESİNİ RETURN EDİYORUZ
+            _context.ToDos.Add(newTodo);
+            await _context.SaveChangesAsync(); // Kaydı veritabanına kalıcı olarak yaz!
+            return new ToDoResponseDto
+            {
+                Id = newTodo.Id,
+                Title = newTodo.Title,
+                Description = newTodo.Description,
+                StatusId = newTodo.StatusId,
+                CreatedDate = newTodo.CreatedDate.ToString(),
+                DueDate = newTodo.DueDate.ToString(),
+                Priority = newTodo.Priority
+            };
         }
 
-        public void Update(int id, ToDoUpdateDto todo)
-        {
-            ToDo? targetitem = null;
+        public async Task Update(int id, ToDoUpdateDto todo)
+        { 
+            // Veritabanından güncellenecek kaydı buluyoruz
+            var targetitem = await _context.ToDos.FindAsync(id);
 
-
-            foreach (var item in _todoList)
-            {
-                if (item.Id == id)
-                {
-                    targetitem = item;// aynı adresi işaret ediyolar itemin adresini
-                    break;
-                }
-            }
-            if(targetitem != null)
+            if (targetitem != null)
             {
                targetitem.Title= todo.Title;
                targetitem.Description= todo.Description;
-               targetitem.IsCompleted= todo.IsCompleted;
                targetitem.UpdatedDate = DateTime.Now;
                targetitem.DueDate = todo.DueDate;
-               targetitem.Priority= todo.Priority;
+               targetitem.Priority = todo.Priority;
             }
+            await _context.SaveChangesAsync();
         }
-        public void Delete(int id)
+        public async Task Delete(int id)
         {
-            ToDo? itemToDelete = null;
-            foreach (var item in _todoList)
-            {
-                if (item.Id == id)
-                {
-                    itemToDelete = item;
-                    break;
-                }
-            }
+            var itemToDelete = await _context.ToDos.FindAsync(id);
+
             if (itemToDelete != null)
             {
-                _todoList.Remove(itemToDelete);
+                _context.ToDos.Remove(itemToDelete);
+                await _context.SaveChangesAsync();
             }
         }
 
-        public void MarkAsComplete(int id)//FOR MARK AS COMPLETED
+        public async Task MarkAsComplete(int id)
         {
-            var targetItem = _todoList.FirstOrDefault(x => x.Id == id);
+            var targetItem = await _context.ToDos.FindAsync(id);
             if (targetItem != null)
             {
-                targetItem.IsCompleted= true;
-                targetItem.UpdatedDate = DateTime.Now;
+                targetItem.StatusId = 3; // "3" = Tamamlandı varsayıyoruz
+                targetItem.UpdatedDate = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
             }
         }
 
-        public List<ToDoResponseDto> Search(string query)
+        public async Task<List<ToDoResponseDto>> Search(string query)
         {
-            // Gelen metni küçük harfe çeviriyoruz ki büyük/küçük harf duyarlılığı olmasın
             var lowerQuery = query.ToLower();
 
-            var filteredList = _todoList.Where(x =>
-                (x.Title != null && x.Title.ToLower().Contains(lowerQuery)) ||
-                (x.Description != null && x.Description.ToLower().Contains(lowerQuery))
-            );
+           // databasede ToDos klasörüne bak await ile donmayı önlüyoruz ve gelen verileri listte tutuyoruz
+            var list = await _context.ToDos
+                .Where(x =>
+                    (x.Title != null && x.Title.ToLower().Contains(lowerQuery)) ||
+                    (x.Description != null && x.Description.ToLower().Contains(lowerQuery)))
+                .ToListAsync();
 
-            // İstenen stringe sahip olanlar dtoya çevirip listeye ekliyoruz
             var responseList = new List<ToDoResponseDto>();
-            foreach (var item in filteredList)
+            foreach (var item in list)
             {
                 responseList.Add(MapToDto(item));
             }
 
             return responseList;
         }
+        
         private ToDoResponseDto MapToDto(ToDo item)// sürekli dto yazmamak için 
         {
             return new ToDoResponseDto
             {
-                Id = item.Id,
+               
                 Title = item.Title,
                 Description = item.Description,
-                IsCompleted = item.IsCompleted,
+                Id= item.Id,
+                StatusId= item.StatusId,
                 CreatedDate = item.CreatedDate?.ToString("dd/MM/yyyy HH:mm"),
                 UpdatedDate = item.UpdatedDate?.ToString("dd/MM/yyyy HH:mm"),
                 DueDate = item.DueDate?.ToString("dd/MM/yyyy HH:mm"),

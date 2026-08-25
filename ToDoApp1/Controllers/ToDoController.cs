@@ -1,8 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc; // paket dahil ettik
-using ToDoApp1.Business.Dtos;
-using ToDoApp1.Business.Interfaces; // Arayüzü kullanmak için dahil ettik
+﻿using Microsoft.AspNetCore.Mvc;
+using ToDoApp1.Business.Interfaces;
 using FluentValidation;
-using Microsoft.AspNetCore.Http.HttpResults;
+using ToDoApp1.Business.Dtos.ToDo;
 
 namespace ToDoApp1.Controllers
 {
@@ -10,9 +9,7 @@ namespace ToDoApp1.Controllers
     [ApiController]
     public class ToDoController : ControllerBase
     {
-        // Dependency Injection: Asıl işi yapacak servisi içeri alıyoruz.
         private readonly IToDoService _toDoService;
-
         private readonly IValidator<ToDoCreateDto> _createValidator;
         private readonly IValidator<ToDoUpdateDto> _updateValidator;
 
@@ -25,64 +22,62 @@ namespace ToDoApp1.Controllers
             _updateValidator = updateValidator;
         }
 
-        [HttpGet] 
-        public IActionResult GetAll([FromQuery] bool? isCompleted, [FromQuery] string?  sortBy)
+        [HttpGet]
+        // 1. bool? isCompleted yerine int? statusId yazdık ve metodu async yaptık
+        public async Task<IActionResult> GetAll([FromQuery] int? statusId, [FromQuery] string? sortBy)
         {
-            
-            var list = _toDoService.GetAll(isCompleted, sortBy);
-
+            var list = await _toDoService.GetAll(statusId, sortBy);
             return Ok(list);
         }
 
-        [HttpGet("{id}")] 
-        public IActionResult GetById(int id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
         {
-            var item = _toDoService.GetById(id);
+            var item = await _toDoService.GetById(id);
 
             if (item == null)
             {
-                return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı."); // 404 Not Found 
+                return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı.");
             }
 
-            // Kayıt bulunduysa 200 OK 
             return Ok(item);
         }
 
         [HttpGet("search")]
-        public IActionResult Search([FromQuery] string query)
+        public async Task<IActionResult> Search([FromQuery] string query)
         {
-            if (string.IsNullOrWhiteSpace(query))// null ya da sadece space girildiyse
+            if (string.IsNullOrWhiteSpace(query))
             {
                 return BadRequest("Arama yapabilmek için bir kelime girmelisiniz.");
             }
 
-            var result = _toDoService.Search(query);
+            var result = await _toDoService.Search(query);
             return Ok(result);
         }
 
-        [HttpPost] // yeni veri oluşturmak eklemek için
-        public IActionResult Post([FromBody] ToDoCreateDto newItem)
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] ToDoCreateDto newItem)
         {
             var validationResult = _createValidator.Validate(newItem);
 
-           
             if (!validationResult.IsValid)
             {
                 return BadRequest(validationResult.Errors);
             }
-            _toDoService.PostAdd(newItem);
 
-            return Created(string.Empty, "Kayıt başarıyla eklendi.");
+            var createdItem =await _toDoService.PostAdd(newItem); // await eklendi
+
+            return Created(string.Empty,createdItem);
         }
 
-        [HttpPut("{id}")] 
-        public IActionResult Put(int id, [FromBody] ToDoUpdateDto updatedItem)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(int id, [FromBody] ToDoUpdateDto updatedItem)
         {
-            var item = _toDoService.GetById(id);
+            var item = await _toDoService.GetById(id);
 
             if (item == null)
             {
-                return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı."); // 404 Not Found 
+                return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı.");
             }
             var validationResult = _updateValidator.Validate(updatedItem);
 
@@ -91,34 +86,36 @@ namespace ToDoApp1.Controllers
                 return BadRequest(validationResult.Errors);
             }
 
-            _toDoService.Update(id,updatedItem);
+            await _toDoService.Update(id, updatedItem);
 
             return Ok("Kayıt başarıyla güncellendi.");
         }
 
-        [HttpDelete("{id}")] // var olan veriyi siler
-        public IActionResult Delete(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var item = _toDoService.GetById(id);
+            var item = await _toDoService.GetById(id);
 
             if (item == null)
             {
-                return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı."); // 404 Not Found 
+                return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı.");
             }
-            _toDoService.Delete(id);
+
+            await _toDoService.Delete(id);
 
             return Ok("Kayıt başarıyla silindi.");
         }
 
         [HttpPatch("{id}/complete")]
-        public IActionResult CompleteToDo(int id)
+        public async Task<IActionResult> CompleteToDo(int id)
         {
-            var existingItem=_toDoService.GetById(id);// bu id ile bir kayıt var mı 
-            if(existingItem == null)
+            var existingItem = await _toDoService.GetById(id);
+            if (existingItem == null)
             {
                 return NotFound("İstenen kayıt bulunamadı");
             }
-            _toDoService.MarkAsComplete(id);
+
+            await _toDoService.MarkAsComplete(id);
             return Ok("Kayıt başarıyla tamamlandı olarak işaretlendi");
         }
     }
