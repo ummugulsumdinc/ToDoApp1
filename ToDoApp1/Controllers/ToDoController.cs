@@ -23,11 +23,17 @@ namespace ToDoApp1.Controllers
         }
 
         [HttpGet]
-        // 1. bool? isCompleted yerine int? statusId yazdık ve metodu async yaptık
-        public async Task<IActionResult> GetAll([FromQuery] int? statusId, [FromQuery] string? sortBy)
+        //  bool? isCompleted yerine int? statusId yazdık ve metodu async yaptık
+        public async Task<IActionResult> GetAll([FromQuery] int? statusId, [FromQuery] string? sortBy, [FromQuery] int page = 1)
         {
-            var list = await _toDoService.GetAll(statusId, sortBy);
-            return Ok(list);
+            int pageSize = 3;
+
+            var list = await _toDoService.GetAll(statusId, sortBy,page, pageSize);
+            return Ok(new
+            {
+                Message = $"{page}. sayfa görevler başarıyla listelendi.",
+                Data = list
+            });
         }
 
         [HttpGet("{id}")]
@@ -40,7 +46,11 @@ namespace ToDoApp1.Controllers
                 return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı.");
             }
 
-            return Ok(item);
+            return Ok(new
+            {
+                Message = "Görev detayı başarıyla getirildi.",
+                Data = item
+            });
         }
 
         [HttpGet("search")]
@@ -52,7 +62,11 @@ namespace ToDoApp1.Controllers
             }
 
             var result = await _toDoService.Search(query);
-            return Ok(result);
+            return Ok(new
+            {
+                Message = $"{result.Count} adet arama sonucu bulundu.",
+                Data = result
+            });
         }
 
         [HttpPost]
@@ -67,7 +81,11 @@ namespace ToDoApp1.Controllers
 
             var createdItem =await _toDoService.PostAdd(newItem); // await eklendi
 
-            return Created(string.Empty,createdItem);
+            return Created("", new
+            {
+                Message="Yeni görev başarıyla oluşturuldu.",
+                Data=createdItem
+            });
         }
 
         [HttpPut("{id}")]
@@ -88,7 +106,11 @@ namespace ToDoApp1.Controllers
 
             await _toDoService.Update(id, updatedItem);
 
-            return Ok("Kayıt başarıyla güncellendi.");
+            return Ok(new
+            {
+                Message = "Kayıt başarıyla güncellendi.",
+                Data=item
+            });
         }
 
         [HttpDelete("{id}")]
@@ -103,7 +125,11 @@ namespace ToDoApp1.Controllers
 
             await _toDoService.Delete(id);
 
-            return Ok("Kayıt başarıyla silindi.");
+            return Ok(new
+            {
+                Message = "Kayıt başarıyla silindi.",
+                Data= item
+            });
         }
 
         [HttpPatch("{id}/complete")]
@@ -116,7 +142,11 @@ namespace ToDoApp1.Controllers
             }
 
             await _toDoService.MarkAsComplete(id);
-            return Ok("Kayıt başarıyla tamamlandı olarak işaretlendi");
+            return Ok(new
+            {
+                Message = "Kayıt başarıyla tamamlandı olarak işaretlendi",
+                Data=existingItem
+            });
         }
     }
 }

@@ -10,20 +10,23 @@ namespace ToDoApp1.Business.Services
    
     public class ToDoService: IToDoService
     {
-        private readonly AppDbContext _context;//databaseden alıyoruz artık
+        private readonly AppDbContext _context;//databaseden alıyoruz artık     
         public ToDoService(AppDbContext context)
         {
             _context = context;
         }
-        
-        
-        public async Task<List<ToDoResponseDto>> GetAll(int? statusId=null, string? sortBy = null)
+
+
+        public async Task<List<ToDoResponseDto>> GetAll(int? statusId = null, string? sortBy = null, int pageNumber = 1, int pageSize = 3)
         {
-            var query = _context.ToDos.AsQueryable();
+            var query = _context.ToDos
+                        .Include(x => x.Project)
+                        .Include(x => x.Status)
+                        .Include(x => x.User)
+                        .AsQueryable();
 
             if (statusId.HasValue)
             {
-                // Veritabanında StatusId'ye göre arama yapıyoruz
                 query = query.Where(x => x.StatusId == statusId.Value);
             }
 
@@ -43,22 +46,35 @@ namespace ToDoApp1.Business.Services
                     query = query.OrderBy(x => x.DueDate);
                 }
             }
+            else
+            {
+                query = query.OrderBy(x => x.Id);
+            }
+            // Skip -> Geçilecek kayıt sayısı = (Sayfa Numarası - 1) * Sayfadaki Veri Sayısı
+            // Take -> Alınacak kayıt sayısı = Sayfadaki Veri Sayısı (Biz 3 olarak belirledik)
 
-            // Sorguyu veritabanında çalıştır ve sonuçları listeye çevir (Asenkron)
-            var list = await query.ToListAsync();
+            var list = await query
+                        .Skip((pageNumber - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToListAsync();
 
             var responseList = new List<ToDoResponseDto>();
-            foreach (var item in list) {
-
+            foreach (var item in list)
+            {
                 responseList.Add(MapToDto(item));
             }
+
             return responseList;
         }
 
         public async Task<ToDoResponseDto?> GetById(int id)
         {
             // FirstOrDefaultAsync veya FindAsync ile veritabanından tek kayıt çekiyoruz
-            var item = await _context.ToDos.FindAsync(id);
+            var item = await _context.ToDos
+                .Include(x => x.Project)
+                .Include(x => x.Status)
+                .Include(x => x.User)
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (item != null)
             {
@@ -69,46 +85,40 @@ namespace ToDoApp1.Business.Services
 
         public async Task<ToDoResponseDto> PostAdd(ToDoCreateDto todo)
         {
-            var newTodo = new ToDo // DTO'daki bilgileri kullanarak asıl Modeli (ToDo) oluşturuyoruz
+            var newTodo = new ToDo
             {
-                
-                Title = todo.Title, // Kullanıcının gönderdiği başlığı aldık
-                Description= todo.Description,
+                Title = todo.Title,
+                Description = todo.Description,
                 CreatedDate = DateTime.Now,
                 DueDate = todo.DueDate,
                 Priority = todo.Priority,
-                ProjectId=todo.ProjectId,
-                StatusId=todo.StatusId.Value
+                ProjectId = todo.ProjectId,
+                StatusId = todo.StatusId ?? 1, // Null gelirse varsayılan 1
+                UserId = todo.UserId
             };
 
             _context.ToDos.Add(newTodo);
-            await _context.SaveChangesAsync(); // Kaydı veritabanına kalıcı olarak yaz!
-            return new ToDoResponseDto
-            {
-                Id = newTodo.Id,
-                Title = newTodo.Title,
-                Description = newTodo.Description,
-                StatusId = newTodo.StatusId,
-                CreatedDate = newTodo.CreatedDate.ToString(),
-                DueDate = newTodo.DueDate.ToString(),
-                Priority = newTodo.Priority
-            };
+            await _context.SaveChangesAsync();
+
+            // DÜZELTME: Manuel nesne yerine MapToDto kullanan GetById çağrıldı, böylece isimler eksiksiz döner
+            return await GetById(newTodo.Id);
         }
 
         public async Task Update(int id, ToDoUpdateDto todo)
-        { 
-            // Veritabanından güncellenecek kaydı buluyoruz
+        {
             var targetitem = await _context.ToDos.FindAsync(id);
 
             if (targetitem != null)
             {
-               targetitem.Title= todo.Title;
-               targetitem.Description= todo.Description;
-               targetitem.UpdatedDate = DateTime.Now;
-               targetitem.DueDate = todo.DueDate;
-               targetitem.Priority = todo.Priority;
+                targetitem.Title = todo.Title;
+                targetitem.Description = todo.Description;
+                targetitem.UpdatedDate = DateTime.Now;
+                targetitem.DueDate = todo.DueDate;
+                targetitem.Priority = todo.Priority;
+
+                // DÜZELTME: SaveChanges sadece kayıt bulunduysa çalışacak şekilde if bloğunun içine alındı
+                await _context.SaveChangesAsync();
             }
-            await _context.SaveChangesAsync();
         }
         public async Task Delete(int id)
         {
@@ -137,13 +147,15 @@ namespace ToDoApp1.Business.Services
         {
             var lowerQuery = query.ToLower();
 
-           // databasede ToDos klasörüne bak await ile donmayı önlüyoruz ve gelen verileri listte tutuyoruz
+            // databasede ToDos klasörüne bak await ile donmayı önlüyoruz ve gelen verileri listte tutuyoruz
             var list = await _context.ToDos
+                .Include(x => x.Project)
+                .Include(x => x.Status)
+                .Include(x => x.User)
                 .Where(x =>
                     (x.Title != null && x.Title.ToLower().Contains(lowerQuery)) ||
                     (x.Description != null && x.Description.ToLower().Contains(lowerQuery)))
                 .ToListAsync();
-
             var responseList = new List<ToDoResponseDto>();
             foreach (var item in list)
             {
@@ -161,11 +173,19 @@ namespace ToDoApp1.Business.Services
                 Title = item.Title,
                 Description = item.Description,
                 Id= item.Id,
-                StatusId= item.StatusId,
                 CreatedDate = item.CreatedDate?.ToString("dd/MM/yyyy HH:mm"),
                 UpdatedDate = item.UpdatedDate?.ToString("dd/MM/yyyy HH:mm"),
                 DueDate = item.DueDate?.ToString("dd/MM/yyyy HH:mm"),
-                Priority = item.Priority
+                Priority = item.Priority,
+                StatusId = item.StatusId,
+                StatusName= item.Status?.Name,
+                ProjectId = item.ProjectId,
+                ProjectTitle=item.Project?.Title,
+                UserId=item.UserId,
+                UserName=item.User?.Name,
+                UserSurname=item.User?.Surname,
+
+               
             };
         }
     }
