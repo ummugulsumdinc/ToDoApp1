@@ -93,8 +93,9 @@ namespace ToDoApp1.Business.Services
                 DueDate = todo.DueDate,
                 Priority = todo.Priority,
                 ProjectId = todo.ProjectId,
-                StatusId = todo.StatusId ?? 1, // Null gelirse varsayılan 1
-                UserId = todo.UserId
+                StatusId = todo.StatusId ?? (int)DefaultStatuses.Uncompleted, 
+                UserId = todo.UserId,
+                ParentId= todo.ParentId
             };
 
             _context.ToDos.Add(newTodo);
@@ -114,7 +115,9 @@ namespace ToDoApp1.Business.Services
                 targetitem.Description = todo.Description;
                 targetitem.UpdatedDate = DateTime.Now;
                 targetitem.DueDate = todo.DueDate;
+                targetitem.StatusId = todo.StatusId ?? (int)DefaultStatuses.Uncompleted;
                 targetitem.Priority = todo.Priority;
+                targetitem.ParentId = todo.ParentId;
 
                 // DÜZELTME: SaveChanges sadece kayıt bulunduysa çalışacak şekilde if bloğunun içine alındı
                 await _context.SaveChangesAsync();
@@ -127,7 +130,13 @@ namespace ToDoApp1.Business.Services
             if (itemToDelete != null)
             {
                 _context.ToDos.Remove(itemToDelete);
-                await _context.SaveChangesAsync();
+                try { 
+                    await _context.SaveChangesAsync(); 
+                }
+                catch (DbUpdateException)
+                {
+                    throw new Exception(" Bu TODO alt TODOLARA sahip olduğu için silinemiyor .LÜTFEN önce alt todoları siliniz.");
+                }
             }
         }
 
@@ -136,7 +145,7 @@ namespace ToDoApp1.Business.Services
             var targetItem = await _context.ToDos.FindAsync(id);
             if (targetItem != null)
             {
-                targetItem.StatusId = 3; // "3" = Tamamlandı varsayıyoruz
+                targetItem.StatusId=(int)DefaultStatuses.Completed;
                 targetItem.UpdatedDate = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -184,8 +193,7 @@ namespace ToDoApp1.Business.Services
                 UserId=item.UserId,
                 UserName=item.User?.Name,
                 UserSurname=item.User?.Surname,
-
-               
+                ParentId=item.ParentId
             };
         }
     }

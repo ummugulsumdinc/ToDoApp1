@@ -123,13 +123,20 @@ namespace ToDoApp1.Controllers
                 return NotFound("Aradığınız ID'ye ait bir kayıt bulunamadı.");
             }
 
-            await _toDoService.Delete(id);
-
-            return Ok(new
+            try
             {
-                Message = "Kayıt başarıyla silindi.",
-                Data= item
-            });
+                await _toDoService.Delete(id);
+
+                return Ok(new
+                {
+                    Message = "Kayıt başarıyla silindi.",
+                    Data = item
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new {Message=ex.Message});
+            }
         }
 
         [HttpPatch("{id}/complete")]

@@ -19,7 +19,11 @@ namespace ToDoApp1.Controllers
         public async Task<IActionResult> GetAll()
         {
             var projects = await _projectService.GetAll();
-            return Ok(projects);
+            return Ok(new
+            {
+                Message="Projeler başarıyla listelendi",
+                Data=projects
+            });
         }
 
         [HttpGet("{id}")]
@@ -30,14 +34,22 @@ namespace ToDoApp1.Controllers
             {
                 return NotFound("Proje bulunamadı.");
             }
-            return Ok(project);
+            return Ok(new
+            {
+                Message ="Proje detayı başarıyla getirildi.",
+                Data=project 
+            });
         }
 
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] ProjectCreateDto projectDto)
         {
             await _projectService.Add(projectDto);
-            return Created(string.Empty, "Proje başarıyla eklendi.");
+            return Created("",new
+            {
+                Message="Proje başarıyla eklendi.",
+                Data=projectDto
+            });
         }
 
         [HttpPut("{id}")]
@@ -50,7 +62,11 @@ namespace ToDoApp1.Controllers
             }
 
             await _projectService.Update(id, projectDto);
-            return Ok("Proje başarıyla güncellendi.");
+            return Ok(new
+            {
+                Message = "Project başarıyla güncellendi.",
+                Data = project
+            });
         }
 
         [HttpDelete("{id}")]

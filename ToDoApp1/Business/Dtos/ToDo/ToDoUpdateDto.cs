@@ -9,5 +9,7 @@
         public int Priority { get; set; } // 1: Düşük, 2: Orta, 3: Yüksek
         public int ProjectId { get; set; } // Hangi projeye ait?
         public int? StatusId { get; set; }
+
+        public int? ParentId { get; set; }// sub-todonun yeri değişebilsin diye
     }
 }

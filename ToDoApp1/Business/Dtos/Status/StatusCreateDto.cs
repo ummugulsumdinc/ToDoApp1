@@ -2,6 +2,6 @@
 {
     public class StatusCreateDto
     {
-        public string Name { get; set; } = string.Empty; // Örn: Yapılacak, Devam Ediyor vb.
+        public string Name { get; set; } = string.Empty; 
     }
 }

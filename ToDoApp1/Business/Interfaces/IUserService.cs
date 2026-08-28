@@ -9,5 +9,6 @@ namespace ToDoApp1.Business.Services
         Task<UserResponseDto> Add(UserCreateDto userDto);
         Task Update(int id, UserCreateDto userDto);
         Task Delete(int id);
+        Task<UserStatusResponseDto> GetStatus(int userId);
     }
 }

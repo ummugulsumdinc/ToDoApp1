@@ -76,6 +76,36 @@ namespace ToDoApp1.Business.Services
 
         }
 
+        public async Task<UserStatusResponseDto> GetStatus(int userId)
+        {
+            var user=await _context.Users
+                .Include(u=> u.TotalToDoList).FirstOrDefaultAsync(u => u.Id == userId);//usera bağlı tüm todo datalarını çekiyoruz
+
+            if(user == null)
+            {
+                throw new Exception("Kullanıcı bulunamadı");
+            }
+
+            var statusDto = new UserStatusResponseDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Surname = user.Surname,
+                TotalToDo = user.TotalToDoList.Count,
+                UncompletedToDo = user.TotalToDoList.Count(t => t.StatusId == 1),
+                CurrentlyCompletingToDo = user.TotalToDoList.Count(t => t.StatusId == 2),
+                CompletedToDo = user.TotalToDoList.Count(t => t.StatusId == 3),
+
+                TotalToDoList = user.TotalToDoList.Select(t => new UserBasicToDoDto
+                {
+                    Id = t.Id,
+                    Title = t.Title
+                }).ToList()
+            };
+
+            return statusDto;
+        }
+
         private UserResponseDto MapToDto(User user)
         {
             return new UserResponseDto

@@ -20,7 +20,12 @@ namespace ToDoApp1.Controllers
         public async Task<IActionResult> GetAll()
         {
             var users = await _userService.GetAll();
-            return Ok(users);
+            return Ok(new
+            {
+                Message = "Görevler başarıyla listelendi.",
+                Data = users
+            });
+        
         }
 
         [HttpGet("{id}")]
@@ -33,14 +38,22 @@ namespace ToDoApp1.Controllers
                 return NotFound("Aradığınız ID'ye ait kullanıcı bulunamadı.");
             }
 
-            return Ok(user);
+            return Ok(new
+            {
+                Message = "user detayı başarıyla getirildi.",
+                Data = user
+            });
         }
 
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] UserCreateDto userDto)
         {
             var createdUser = await _userService.Add(userDto);
-            return Created(string.Empty, createdUser);
+            return Created("",new
+            {
+                Message="User başarıyla oluşturuldu",
+                Data=createdUser
+            });
         }
 
         [HttpPut("{id}")]
@@ -53,7 +66,11 @@ namespace ToDoApp1.Controllers
             }
 
             await _userService.Update(id, userDto);
-            return Ok("Kullanıcı başarıyla güncellendi.");
+            return Ok(new
+            {
+                Message = "Kayıt başarıyla güncellendi.",
+                Data = existingUser
+            });
         }
 
         [HttpDelete("{id}")]
@@ -67,6 +84,28 @@ namespace ToDoApp1.Controllers
 
             await _userService.Delete(id);
             return Ok("Kullanıcı başarıyla silindi.");
+        }
+
+        [HttpGet("{id}/status")]
+        public async Task<IActionResult> GetUserStatus(int id)
+        {
+            try
+            {
+                var result = await _userService.GetStatus(id);
+
+                return Ok(new
+                {
+                    Message = "Kullanıcı istatistikleri başarıyla getirildi",
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    Message = ex.Message
+                });
+            }
         }
     }
 }

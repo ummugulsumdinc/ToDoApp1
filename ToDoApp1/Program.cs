@@ -14,12 +14,13 @@ builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen(); // Swagger Jeneratör
 
 builder.Services.AddScoped<IToDoService, ToDoService>();
-builder.Services.AddValidatorsFromAssemblyContaining<CreateToDoValidator>();
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IStatusService, StatusService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateToDoValidator>();
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

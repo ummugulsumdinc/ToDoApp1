@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ToDoApp1.Data;
 
@@ -10,9 +11,11 @@ using ToDoApp1.Data;
 namespace ToDoApp1.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260827084557_AddParentChildRelation")]
+    partial class AddParentChildRelation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
@@ -58,26 +61,6 @@ namespace ToDoApp1.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Statuses");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Colour = "",
-                            Name = "Tamamlanmadı"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Colour = "",
-                            Name = "Devam Ediyor"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Colour = "",
-                            Name = "Tamamlandı"
-                        });
                 });
 
             modelBuilder.Entity("ToDoApp1.Models.ToDo", b =>
@@ -94,6 +77,9 @@ namespace ToDoApp1.Migrations
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("ParentId")
                         .HasColumnType("INTEGER");
@@ -176,7 +162,7 @@ namespace ToDoApp1.Migrations
                         .IsRequired();
 
                     b.HasOne("ToDoApp1.Models.User", "User")
-                        .WithMany("TotalToDoList")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -203,11 +189,6 @@ namespace ToDoApp1.Migrations
             modelBuilder.Entity("ToDoApp1.Models.ToDo", b =>
                 {
                     b.Navigation("SubToDos");
-                });
-
-            modelBuilder.Entity("ToDoApp1.Models.User", b =>
-                {
-                    b.Navigation("TotalToDoList");
                 });
 #pragma warning restore 612, 618
         }

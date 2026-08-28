@@ -24,5 +24,7 @@
         public string? UserName { get; set; }
         public string? UserSurname { get; set; }
 
+        public int? ParentId { get; set; } = null!; //todo yansıtıldığında parent todosu da belli olsun
+
     }
 }
