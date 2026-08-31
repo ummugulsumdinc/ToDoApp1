@@ -35,5 +35,6 @@ app.UseRouting();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+app.UseMiddleware<ToDoApp1.Middlewares.ExceptionMiddleware>();
 
 app.Run();
