@@ -1,19 +1,22 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ToDoApp1.Business.Interfaces;
-using ToDoApp1.Models;
-using FluentValidation;
-using ToDoApp1.Data;
 using ToDoApp1.Business.Dtos.ToDo;
+using ToDoApp1.Business.Interfaces;
+using ToDoApp1.Data;
+using ToDoApp1.Exceptions;
+using ToDoApp1.Models;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ToDoApp1.Business.Services
 {
    
     public class ToDoService: IToDoService
     {
-        private readonly AppDbContext _context;//databaseden alıyoruz artık     
-        public ToDoService(AppDbContext context)
+        private readonly AppDbContext _context;//databaseden alıyoruz artık
+        private readonly ILogger<ToDoService> _logger;
+        public ToDoService(AppDbContext context, ILogger<ToDoService> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
 
@@ -25,6 +28,7 @@ namespace ToDoApp1.Business.Services
                         .Include(x => x.User)
                         .AsQueryable();
 
+          
             if (statusId.HasValue)
             {
                 query = query.Where(x => x.StatusId == statusId.Value);
@@ -76,15 +80,26 @@ namespace ToDoApp1.Business.Services
                 .Include(x => x.User)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (item != null)
-            {
-                return MapToDto(item);
+            if(item == null)
+            {// YENİ: Kayıt bulunamadığında sistem çökmediği için Error değil, Warning 
+                _logger.LogWarning("GetById işlemi başarısız: {TodoId} numaralı kayıt bulunamadı.", id);
+                throw new NotFoundException($"{id} numaralı ToDo kaydı bulunamadı");
             }
-            return null;
+            
+            return MapToDto(item);
+            
         }
 
         public async Task<ToDoResponseDto> PostAdd(ToDoCreateDto todo)
         {
+            if (string.IsNullOrWhiteSpace(todo.Title))
+            {
+                // Geliştirici için log 
+                _logger.LogWarning("Kullanıcı başlığı boş bırakarak görev eklemeye çalıştı.");
+
+                // Kullanıcıya  hatayı göster
+                throw new ValidationException("Görev başlığı (Title) boş bırakılamaz!");
+            }
             var newTodo = new ToDo
             {
                 Title = todo.Title,
@@ -100,6 +115,8 @@ namespace ToDoApp1.Business.Services
             _context.ToDos.Add(newTodo);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Yeni ToDo başarıyla oluşturuldu. Oluşturulan TodoId: {TodoId}", newTodo.Id);
+
             // DÜZELTME: Manuel nesne yerine MapToDto kullanan GetById çağrıldı, böylece isimler eksiksiz döner
             return await GetById(newTodo.Id);
         }
@@ -108,39 +125,47 @@ namespace ToDoApp1.Business.Services
         {
             var targetitem = await _context.ToDos.FindAsync(id);
 
-            if (targetitem != null)
+            if (targetitem == null)
             {
-                targetitem.Title = todo.Title;
-                targetitem.Description = todo.Description;
-                targetitem.UpdatedDate = DateTime.Now;
-                targetitem.DueDate = todo.DueDate;
-                targetitem.Priority = todo.Priority;
-
-                // DÜZELTME: SaveChanges sadece kayıt bulunduysa çalışacak şekilde if bloğunun içine alındı
-                await _context.SaveChangesAsync();
+                throw new NotFoundException($"{id} numaralı ToDo kaydı bulunamadı");
             }
+            targetitem.Title = todo.Title;
+            targetitem.Description = todo.Description;
+            targetitem.UpdatedDate = DateTime.Now;
+            targetitem.DueDate = todo.DueDate;
+            targetitem.Priority = todo.Priority;
+
+            // DÜZELTME: SaveChanges sadece kayıt bulunduysa çalışacak şekilde if bloğunun içine alındı
+            await _context.SaveChangesAsync();
         }
+
+
         public async Task Delete(int id)
         {
             var itemToDelete = await _context.ToDos.FindAsync(id);
 
-            if (itemToDelete != null)
+            if (itemToDelete == null)
             {
-                _context.ToDos.Remove(itemToDelete);
-                await _context.SaveChangesAsync();
+                _logger.LogWarning("Silme işlemi başarısız: {TodoId} numaralı kayıt bulunamadı.", id);
+                throw new NotFoundException($"{id} numaralı ToDo kaydı bulunamadı");
             }
+            _context.ToDos.Remove(itemToDelete);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("{TodoId} numaralı kayıt veritabanından kalıcı olarak silindi.", id);
         }
 
         public async Task MarkAsComplete(int id)
         {
             var targetItem = await _context.ToDos.FindAsync(id);
-            if (targetItem != null)
+            if (targetItem == null)
             {
-                targetItem.StatusId = 3; // "3" = Tamamlandı varsayıyoruz
-                targetItem.UpdatedDate = DateTime.UtcNow;
-
-                await _context.SaveChangesAsync();
+                throw new NotFoundException($"{id} numaralı ToDo kaydı bulunamadı");
             }
+            targetItem.StatusId = 3; // "3" = Tamamlandı varsayıyoruz
+            targetItem.UpdatedDate = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
         }
 
         public async Task<List<ToDoResponseDto>> Search(string query)
@@ -160,6 +185,11 @@ namespace ToDoApp1.Business.Services
             foreach (var item in list)
             {
                 responseList.Add(MapToDto(item));
+            }
+
+            if (responseList.Count == 0)
+            {
+                throw new NotFoundException($"{query} içeren ToDo kaydı bulunamadı");
             }
 
             return responseList;
