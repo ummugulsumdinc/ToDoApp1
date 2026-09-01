@@ -14,5 +14,6 @@ namespace ToDoApp1.Data
         public DbSet<Project> Projects { get; set; }
         public DbSet<ToDo> ToDos { get; set; }
         public DbSet<Status> Statuses { get; set; }
+        public DbSet<Log> Logs { get; set; }
     }
 }

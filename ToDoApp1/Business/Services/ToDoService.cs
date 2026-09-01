@@ -67,7 +67,7 @@ namespace ToDoApp1.Business.Services
             {
                 responseList.Add(MapToDto(item));
             }
-
+            _logger.LogInformation("GetAll işlemi başarılı.");
             return responseList;
         }
 
@@ -85,7 +85,7 @@ namespace ToDoApp1.Business.Services
                 _logger.LogWarning("GetById işlemi başarısız: {TodoId} numaralı kayıt bulunamadı.", id);
                 throw new NotFoundException($"{id} numaralı ToDo kaydı bulunamadı");
             }
-            
+            _logger.LogInformation("GetById işlemi başarılı.");
             return MapToDto(item);
             
         }
@@ -116,8 +116,6 @@ namespace ToDoApp1.Business.Services
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Yeni ToDo başarıyla oluşturuldu. Oluşturulan TodoId: {TodoId}", newTodo.Id);
-
-            // DÜZELTME: Manuel nesne yerine MapToDto kullanan GetById çağrıldı, böylece isimler eksiksiz döner
             return await GetById(newTodo.Id);
         }
 
@@ -134,9 +132,8 @@ namespace ToDoApp1.Business.Services
             targetitem.UpdatedDate = DateTime.Now;
             targetitem.DueDate = todo.DueDate;
             targetitem.Priority = todo.Priority;
-
-            // DÜZELTME: SaveChanges sadece kayıt bulunduysa çalışacak şekilde if bloğunun içine alındı
             await _context.SaveChangesAsync();
+            _logger.LogInformation("Update işlemi başarılı.");
         }
 
 
@@ -152,7 +149,7 @@ namespace ToDoApp1.Business.Services
             _context.ToDos.Remove(itemToDelete);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("{TodoId} numaralı kayıt veritabanından kalıcı olarak silindi.", id);
+            _logger.LogInformation("Delete işlemi başarılı.");
         }
 
         public async Task MarkAsComplete(int id)
@@ -164,8 +161,9 @@ namespace ToDoApp1.Business.Services
             }
             targetItem.StatusId = 3; // "3" = Tamamlandı varsayıyoruz
             targetItem.UpdatedDate = DateTime.UtcNow;
+             await _context.SaveChangesAsync();
+            _logger.LogInformation("MarkAsCompleted işlemi başarılı.");
 
-            await _context.SaveChangesAsync();
         }
 
         public async Task<List<ToDoResponseDto>> Search(string query)
@@ -191,7 +189,7 @@ namespace ToDoApp1.Business.Services
             {
                 throw new NotFoundException($"{query} içeren ToDo kaydı bulunamadı");
             }
-
+            _logger.LogInformation("Search işlemi başarılı.");
             return responseList;
         }
         
