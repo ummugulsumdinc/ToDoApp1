@@ -42,7 +42,8 @@ namespace ToDoApp1.Business.Services
             var newProject = new Project
             {
                 Title = projectDto.Title,
-                Description = projectDto.Description
+                Description = projectDto.Description,
+                UserId = projectDto.UserId
             };
 
             _context.Projects.Add(newProject);

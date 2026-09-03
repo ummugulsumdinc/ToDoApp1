@@ -1,0 +1,8 @@
+# Use this workspace to collaborate
+workspace:
+  id: e8766b2e-79e9-4832-898d-272c869f4b23
+
+localResources:
+  specs:
+    - ../obj/Debug/net10.0/EndpointInfo/ToDoApp1.json
+    - ../obj/Release/net10.0/EndpointInfo/ToDoApp1.json

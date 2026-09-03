@@ -41,7 +41,9 @@ namespace ToDoApp1.Business.Services
         {
             var newStatus = new Status
             {
-                Name = statusDto.Name
+                Name = statusDto.Name,
+                Colour = statusDto.Colour,
+                UserId = statusDto.UserId
             };
 
             _context.Statuses.Add(newStatus);

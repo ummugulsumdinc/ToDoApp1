@@ -134,7 +134,12 @@ namespace ToDoApp1.Business.Services
             targetitem.UpdatedDate = DateTime.Now;
             targetitem.DueDate = todo.DueDate;
             targetitem.Priority = todo.Priority;
+            targetitem.ProjectId = todo.ProjectId;
 
+            if (todo.StatusId.HasValue) // Null değilse güncelle
+            {
+                targetitem.StatusId = todo.StatusId.Value;
+            }
             // DÜZELTME: SaveChanges sadece kayıt bulunduysa çalışacak şekilde if bloğunun içine alındı
             await _context.SaveChangesAsync();
         }

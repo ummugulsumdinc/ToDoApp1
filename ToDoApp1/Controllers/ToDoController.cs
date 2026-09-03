@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ToDoApp1.Business.Interfaces;
-using FluentValidation;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ToDoApp1.Business.Dtos.ToDo;
+using ToDoApp1.Business.Interfaces;
 
 namespace ToDoApp1.Controllers
 {
+    [Authorize]
     [Route("api/todos")]
     [ApiController]
     public class ToDoController : ControllerBase

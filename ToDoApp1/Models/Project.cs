@@ -12,5 +12,6 @@
 
         // Navigation Property: Bir projenin içinde birden fazla görev olur.
         public ICollection<ToDo> ToDos { get; set; } = new List<ToDo>();
+        public User User { get; set; } = null!;
     }
 }

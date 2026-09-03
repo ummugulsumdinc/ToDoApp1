@@ -36,11 +36,30 @@ namespace ToDoApp1.Controllers
             return Ok(user);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Post([FromBody] UserCreateDto userDto)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] UserCreateDto userDto)
         {
             var createdUser = await _userService.Add(userDto);
             return Created(string.Empty, createdUser);
+        }
+
+        
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] UserLoginDto loginDto)
+        {
+            try
+            {
+                // Şifre doğruysa Token üretilir
+                string token = await _userService.Login(loginDto);
+
+             
+                return Ok(new { Token = token });
+            }
+            catch (Exception ex)
+            {
+                
+                return BadRequest(new { Message = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]
